@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Order Details</title>
+    <script
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        background-color: #333;
+        color: #fff;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        width: 80%;
+        margin: auto;
+      }
+      .image {
+        width: 100%;
+      }
+      table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        color: #ddd;
+      }
+      th {
+        background-color: #444;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel" data-presets="env,react">
+      const buzzyFrameAPI = new BuzzyFrameAPI();
+
+      function formatCurrency(value, currency) {
+        if (!value || !currency) {
+          return "";
+        }
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: currency,
+        }).format(value) + " " + currency;
+      }
+
+      function App() {
+        const { useEffect, useState } = React;
+
+        const [rowJSON, setRowJSON] = useState(null);
+
+        useEffect(() => {
+          async function initData() {
+            const initData = await buzzyFrameAPI.initialise();
+            const { rowJSON = {} } = initData || {};
+            setRowJSON(rowJSON);
+          }
+
+          initData();
+        }, []);
+
+        return (
+          <div className="container">
+            <h1>Order Details</h1>
+            {rowJSON && (
+              <>
+                <h2>Shipping Address</h2>
+                <p>{rowJSON["Quote Details"].recipient.name}</p>
+                <p>{rowJSON["Quote Details"].recipient.address1}</p>
+                <p>{`${rowJSON["Quote Details"].recipient.city}, ${rowJSON["Quote Details"].recipient.state_code}, ${rowJSON["Quote Details"].recipient.zip}`}</p>
+                <p>{rowJSON["Quote Details"].recipient.country_name}</p>
+
+                <h2>Order Items</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rowJSON["Quote Details"].items.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.name}</td>
+                        <td>{item.quantity}</td>
+                        <td>{`${formatCurrency(item.price, rowJSON["Quote Details"].costs.currency)}`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <h2>Costs</h2>
+                <p>{`Subtotal: ${formatCurrency(rowJSON["Quote Details"].costs.subtotal, rowJSON["Quote Details"].costs.currency)}`}</p>
+                <p>{`Shipping:  ${formatCurrency(rowJSON["Quote Details"].costs.shipping, rowJSON["Quote Details"].costs.currency)}`}</p>
+                <p>{`Tax: ${formatCurrency(rowJSON["Quote Details"].costs.tax, rowJSON["Quote Details"].costs.currency)}`}</p>
+                <p>{`Total: ${formatCurrency(rowJSON["Quote Details"].costs.total, rowJSON["Quote Details"].costs.currency)}`}</p>
+
+                <h2>Mockup Design</h2>
+                <img className="image" src={rowJSON.mockupDesignUrl} alt="Mockup Design" />
+              </>
+            )}
+          </div>
+        );
+      }
+
+      ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
+  </body>
+</html>
